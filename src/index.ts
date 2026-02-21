@@ -19,6 +19,16 @@ app.post('/users', async (req: Request, res: Response) => {
   }
 });
 
+// Show all users
+app.get('/users', async (req: Request, res: Response) => {
+  try {
+    const allUsers = await db.select().from(users);
+    res.json(allUsers);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to fetch users' });
+  }
+});
+
 // Create a new blog post
 app.post('/posts', async (req: Request, res: Response) => {
   const { title, content, authorId } = req.body;
@@ -43,7 +53,7 @@ app.get('/posts', async (req: Request, res: Response) => {
 });
 
 app.get('/', async (req: Request, res: Response) => {
-  res.json({"message": "Hello World!"});
+  res.json({ "message": "Hello World!" });
 });
 
 app.listen(PORT, () => {

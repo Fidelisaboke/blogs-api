@@ -8,6 +8,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Root endpoint
+app.get('/', async (req: Request, res: Response) => {
+  res.json({ "message": "Hello World!" });
+});
+
 // Create a new user
 app.post('/users', async (req: Request, res: Response) => {
   try {
@@ -16,6 +21,37 @@ app.post('/users', async (req: Request, res: Response) => {
     res.json(newUser[0]);
   } catch (error) {
     res.status(400).json({ error: 'Failed to create user' });
+  }
+});
+
+// Get all users
+app.get('/users', async (req: Request, res: Response) => {
+  try {
+    const allUsers = await db.select().from(users);
+    res.json(allUsers);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Get a user by ID
+app.get('/users/:id', async (req: Request, res: Response) => {
+  try {
+    const idParam = req.params.id;
+    if (typeof idParam !== 'string') {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    const userId = parseInt(idParam, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'User ID must be a number' });
+    }
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (user.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user[0]);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to fetch user' });
   }
 });
 
@@ -40,10 +76,6 @@ app.get('/posts', async (req: Request, res: Response) => {
     .where(eq(posts.published, true));
 
   res.json(publishedPosts);
-});
-
-app.get('/', async (req: Request, res: Response) => {
-  res.json({"message": "Hello World!"});
 });
 
 app.listen(PORT, () => {

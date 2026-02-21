@@ -19,13 +19,34 @@ app.post('/users', async (req: Request, res: Response) => {
   }
 });
 
-// Show all users
+// Get all users
 app.get('/users', async (req: Request, res: Response) => {
   try {
     const allUsers = await db.select().from(users);
     res.json(allUsers);
   } catch (error) {
     res.status(400).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Get a user by ID
+app.get('/users/:id', async (req: Request, res: Response) => {
+  try {
+    const idParam = req.params.id;
+    if (typeof idParam !== 'string') {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    const userId = parseInt(idParam, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'User ID must be a number' });
+    }
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (user.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user[0]);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to fetch user' });
   }
 });
 

@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { magicLink } from "better-auth/plugins";
 import { db } from "@/db/index";
 import { requireEnv } from "./utils";
 
@@ -24,5 +25,14 @@ export const auth = betterAuth({
             clientId: requireEnv("GOOGLE_CLIENT_ID"),
             clientSecret: requireEnv("GOOGLE_CLIENT_SECRET"),
         },
-    }
+    },
+
+    plugins: [
+        // Magic Link authentication
+        magicLink({
+            sendMagicLink: async ({ email, token, url}, ctx) => {
+                // Send email to the user
+            }
+        })
+    ]
 });

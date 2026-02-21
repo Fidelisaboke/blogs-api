@@ -8,8 +8,12 @@ export const posts = pgTable('posts', {
     title: text('title').notNull(),
     content: text('content').notNull(),
     published: boolean('published').default(false),
-    createdAt: timestamp('created_at').defaultNow(),
-    authorId: text('author_id').references(() => users.id),
+    authorId: text('author_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+        .defaultNow()
+        .$onUpdate(() => /* @__PURE__ */ new Date())
+        .notNull(),
 });
 
 export const postRelations = relations(posts, ({ one }) => ({

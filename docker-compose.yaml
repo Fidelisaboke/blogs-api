@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:18.2-alpine
+    container_name: blog_postgres_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

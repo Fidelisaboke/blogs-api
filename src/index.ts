@@ -8,6 +8,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Root endpoint
+app.get('/', async (req: Request, res: Response) => {
+  res.json({ "message": "Hello World!" });
+});
+
 // Create a new user
 app.post('/users', async (req: Request, res: Response) => {
   try {
@@ -71,10 +76,6 @@ app.get('/posts', async (req: Request, res: Response) => {
     .where(eq(posts.published, true));
 
   res.json(publishedPosts);
-});
-
-app.get('/', async (req: Request, res: Response) => {
-  res.json({ "message": "Hello World!" });
 });
 
 app.listen(PORT, () => {

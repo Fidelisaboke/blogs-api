@@ -1,0 +1,1 @@
+export { router as postRoutes } from './post.routes';

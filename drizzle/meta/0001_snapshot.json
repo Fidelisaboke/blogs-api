@@ -1,6 +1,6 @@
 {
-  "id": "ce2c5446-f284-4bb5-b229-2df36c823ecc",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "9aa210dc-f8fd-4b9a-b845-f2e101b17640",
+  "prevId": "ce2c5446-f284-4bb5-b229-2df36c823ecc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -569,7 +569,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "post_authorId_idx": {
+          "name": "post_authorId_idx",
+          "columns": [
+            {
+              "expression": "author_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "posts_author_id_users_id_fk": {
           "name": "posts_author_id_users_id_fk",

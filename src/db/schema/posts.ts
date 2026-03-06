@@ -1,9 +1,11 @@
-import { pgTable, serial, text, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, boolean, timestamp, index } from 'drizzle-orm/pg-core';
 import { relations } from "drizzle-orm";
 
 import { users } from './auth';
 
-export const posts = pgTable('posts', {
+export const posts = pgTable(
+    'posts', 
+    {
     id: serial('id').primaryKey(),
     title: text('title').notNull(),
     content: text('content').notNull(),
@@ -14,7 +16,9 @@ export const posts = pgTable('posts', {
         .defaultNow()
         .$onUpdate(() => /* @__PURE__ */ new Date())
         .notNull(),
-});
+    },
+    (table) => [index("post_authorId_idx").on(table.authorId)]
+);
 
 export const postRelations = relations(posts, ({ one }) => ({
     user: one(users, {

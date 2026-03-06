@@ -1,5 +1,4 @@
-import { count } from "drizzle-orm";
-import { db } from "@/db";
+import { AppError } from "@/lib/errors";
 
 export interface PaginationResult<T> {
     data: T[];
@@ -25,10 +24,10 @@ export abstract class BaseService {
         pageSize: number = 20
     ): Promise<PaginationResult<T>> {
         if (pageSize <= 0) {
-            throw new Error('Page size must be greater than 0');
+            throw new AppError('Page size must be greater than 0', 400);
         }
         if (page <= 0) {
-            throw new Error('Page must be greater than 0');
+            throw new AppError('Page must be greater than 0', 400);
         }
         const [data, countResult] = await Promise.all([dataQuery, countQuery]);
         const total = countResult?.total ?? 0;

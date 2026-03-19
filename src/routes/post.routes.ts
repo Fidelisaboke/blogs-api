@@ -10,10 +10,10 @@ export const router: Router = Router();
 const postController = new PostController();
 
 // Public
-router.get("/", optionalAuth, postController.listPosts);
-router.get("/:id", optionalAuth, postController.retrievePost);
+router.get("/", optionalAuth, postController.index);
+router.get("/:id", optionalAuth, postController.show);
 
 // Protected
-router.post("/", requireAuth, validateRequest(createPostSchema), postController.createPost);
-router.patch("/:id", requireAuth, canManagePost, validateRequest(updatePostSchema), postController.updatePost);
-router.delete("/:id", requireAuth, canManagePost, postController.deletePost);
+router.post("/", requireAuth, validateRequest(createPostSchema), postController.create);
+router.patch("/:id", requireAuth, canManagePost, validateRequest(updatePostSchema), postController.update);
+router.delete("/:id", requireAuth, canManagePost, postController.destroy);

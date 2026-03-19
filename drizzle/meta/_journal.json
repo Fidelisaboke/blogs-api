@@ -36,6 +36,13 @@
       "when": 1773909493984,
       "tag": "0004_panoramic_thor_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1773939646641,
+      "tag": "0005_lowly_micromax",
+      "breakpoints": true
     }
   ]
 }

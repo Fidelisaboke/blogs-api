@@ -2,41 +2,42 @@ import { AppError } from '@/lib/errors';
 import { PostService } from '@/services/post.service';
 import type { AuthRequest } from '@/types/auth';
 import type { NextFunction, Request, Response } from 'express';
+import { BaseController, type ICrudController } from './base.controller';
 
-
-export class PostController {
+export class PostController extends BaseController implements ICrudController {
   service: PostService;
 
   constructor() {
+    super()
     this.service = new PostService();
   }
 
-  listPosts = async (req: Request, res: Response, next: NextFunction) => {
+  index = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const authReq = req as AuthRequest;
       const page = Number(req.query.page) || 1;
       const pageSize = Math.min(Number(req.query.limit) || 10, 100);
 
       const result = await this.service.getPosts(authReq.session?.activeOrganizationId, page, pageSize);
-      return res.status(200).json(result);
+      return this.success(res, result, "Retrieved posts successfully", 200)
     } catch (error) {
       next(error);
     }
   };
 
-  createPost = async (req: Request, res: Response, next: NextFunction) => {
+  create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const authReq = req as AuthRequest;
       const organizationId = authReq.session?.activeOrganizationId;
 
-      // Ensure user is authenticated
-      if (!authReq.user) {
-        throw new AppError("User not authenticated", 401);
-      }
-
       // Check if an active organization has been selected
       if (!organizationId) {
         throw new AppError("No active organization selected", 400);
+      }
+      
+      // Ensure user exists
+      if (!authReq.user) {
+        throw new AppError("User not authenticated", 401);
       }
 
       // Set author ID and organization ID
@@ -47,13 +48,13 @@ export class PostController {
       };
 
       const post = await this.service.insertPost(postData);
-      return res.status(201).json({ success: true, data: post });
+      return this.success(res, post, "Post created successfully", 201);
     } catch (error) {
       next(error);
     }
   }
 
-  retrievePost = async (req: Request, res: Response, next: NextFunction) => {
+  show = async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Check if ID is a number
       const postId = Number(req.params.id);
@@ -63,13 +64,13 @@ export class PostController {
 
       // Retrieve post
       const post = await this.service.getPostById(postId, authReq.session?.activeOrganizationId);
-      return res.status(200).json({ success: true, data: post });
+      return this.success(res, post, "Post retrieved successfully", 200);
     } catch (error) {
       next(error);
     }
   }
 
-  updatePost = async (req: Request, res: Response, next: NextFunction) => {
+  update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Check if ID is a number
       const postId = Number(req.params.id);
@@ -80,14 +81,15 @@ export class PostController {
       if (!authReq.post) throw new AppError("Post not found", 404);
 
       // Update post
-      const post = await this.service.updatePost(postId, req.body);
-      return res.status(200).json({ success: true, data: post, message: "Post updated successfully" });
+      const { title, content, published } = req.body;
+      const post = await this.service.updatePost(postId, { title, content, published });
+      return this.success(res, post, "Post updated successfully", 200);
     } catch (error) {
       next(error);
     }
   }
 
-  deletePost = async (req: Request, res: Response, next: NextFunction) => {
+  destroy = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const authReq = req as AuthRequest;
 

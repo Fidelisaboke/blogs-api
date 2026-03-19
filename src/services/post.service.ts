@@ -43,6 +43,7 @@ export class PostService extends BaseService {
         const countQuery = db
             .select({ total: count() })
             .from(posts)
+            .innerJoin(users, eq(posts.authorId, users.id))
             .where(and(...filters))
             .then(([result]) => result ?? { total: 0 });
 
@@ -71,6 +72,7 @@ export class PostService extends BaseService {
     }
 
     async deletePost(id: number) {
-        return await db.delete(posts).where(eq(posts.id, id));
+        const result = await db.delete(posts).where(eq(posts.id, id)).returning();
+        if (result.length === 0) throw new AppError("Post not found", 404);
     }
 }

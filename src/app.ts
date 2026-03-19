@@ -14,7 +14,7 @@ app.all("/api/v1/auth/*splat", toNodeHandler(auth));
 // CORS middleware
 app.use(cors());
 
-//Express JSON parsing
+// Express JSON parsing
 app.use(express.json());
 
 // Routes

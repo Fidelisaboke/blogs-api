@@ -47,7 +47,7 @@
     "skipLibCheck": true,
 
     // Other Options
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true
   }
 }

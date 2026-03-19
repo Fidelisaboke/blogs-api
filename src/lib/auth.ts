@@ -28,7 +28,7 @@ export const auth = betterAuth({
     // Standard Email/Password authentication
     emailAndPassword: {
         enabled: true,
-        requireEmailVerification: requireEnv("NODE_ENV") !== "development",
+        requireEmailVerification: process.env.NODE_ENV !== "development",
     },
 
     // Social Providers
@@ -61,7 +61,7 @@ export const auth = betterAuth({
                         throw new Error("Failed to send magic link email");
                     }
 
-                    console.log("Magic link email sent successfully:", data);
+                    console.log("Magic link email sent successfully:", data?.id);
                 } catch (err) {
                     console.error("Error sending magic link email:", err);
                     throw err;
@@ -71,5 +71,5 @@ export const auth = betterAuth({
     ],
 
     // Advanced configuration
-    advanced: { disableCSRFCheck: requireEnv("NODE_ENV") == "development" }
+    advanced: { disableCSRFCheck: process.env.NODE_ENV === "development" }
 });

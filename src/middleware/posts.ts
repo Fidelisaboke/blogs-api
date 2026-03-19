@@ -21,7 +21,7 @@ export const canManagePost = async (req: Request, res: Response, next: NextFunct
                 organization: {
                     with: {
                         members: {
-                            where: eq(members.userId, userId)
+                            where: (members, { eq }) => eq(members.userId, userId)
                         }
                     }
                 }
@@ -29,6 +29,7 @@ export const canManagePost = async (req: Request, res: Response, next: NextFunct
         })
 
         if (!postWithMember) throw new AppError("Post not found", 404);
+        if (!postWithMember.organization) throw new AppError("Post organization not found", 404);
 
         const userRole = postWithMember.organization.members[0]?.role;
         const isOwner = postWithMember.authorId === userId;

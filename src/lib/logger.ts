@@ -23,6 +23,8 @@ const logger = pino({
         '**.apiKey',
         '**.accessToken',
         '**.refreshToken',
+        '**.email',
+        '**.cookie',
         'req.headers.authorization',
         'req.headers.cookie'
     ]

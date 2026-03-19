@@ -1,7 +1,7 @@
 import * as schema from "@/db/schema";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink, openAPI } from "better-auth/plugins";
+import { magicLink, openAPI, organization } from "better-auth/plugins";
 import { db } from "@/db/index";
 import { requireEnv } from "./utils";
 import { Resend } from "resend";
@@ -17,6 +17,9 @@ export const auth = betterAuth({
             session: schema.sessions,
             verification: schema.verifications,
             account: schema.accounts,
+            member: schema.members,
+            organization: schema.organizations,
+            invitation: schema.invitation,
         }
     }),
 
@@ -25,7 +28,7 @@ export const auth = betterAuth({
     // Standard Email/Password authentication
     emailAndPassword: {
         enabled: true,
-        requireEmailVerification: true,
+        requireEmailVerification: requireEnv("NODE_ENV") !== "development",
     },
 
     // Social Providers
@@ -42,6 +45,7 @@ export const auth = betterAuth({
 
     plugins: [
         openAPI(),
+        organization(),
         magicLink({
             sendMagicLink: async ({ email, token, url }, ctx) => {
                 try {
@@ -64,5 +68,8 @@ export const auth = betterAuth({
                 }
             }
         })
-    ]
+    ],
+
+    // Advanced configuration
+    advanced: { disableCSRFCheck: requireEnv("NODE_ENV") == "development" }
 });

@@ -1,14 +1,14 @@
-import { AppError } from '@/lib/errors';
-import { PostService } from '@/services/post.service';
-import type { AuthRequest } from '@/types/auth';
-import type { NextFunction, Request, Response } from 'express';
-import { BaseController, type ICrudController } from './base.controller';
+import { AppError } from "@/lib/errors";
+import { PostService } from "@/services/post.service";
+import type { AuthRequest } from "@/types/auth";
+import type { NextFunction, Request, Response } from "express";
+import { BaseController, type ICrudController } from "./base.controller";
 
 export class PostController extends BaseController implements ICrudController {
   service: PostService;
 
   constructor() {
-    super()
+    super();
     this.service = new PostService();
   }
 
@@ -18,8 +18,19 @@ export class PostController extends BaseController implements ICrudController {
       const page = Number(req.query.page) || 1;
       const pageSize = Math.min(Number(req.query.limit) || 10, 100);
 
-      const result = await this.service.getPosts(authReq.session?.activeOrganizationId, page, pageSize);
-      return this.success(res, result, "Retrieved posts successfully", 200)
+      // Convert string query to boolean
+      let published: boolean | undefined = undefined;
+      if (req.query.published === "true") published = true;
+      if (req.query.published === "false") published = false;
+
+      const result = await this.service.getPosts(
+        authReq.session?.activeOrganizationId,
+        page,
+        pageSize,
+        published,
+      );
+
+      return this.success(res, result, "Retrieved posts successfully", 200);
     } catch (error) {
       next(error);
     }
@@ -34,7 +45,7 @@ export class PostController extends BaseController implements ICrudController {
       if (!organizationId) {
         throw new AppError("No active organization selected", 400);
       }
-      
+
       // Ensure user exists
       if (!authReq.user) {
         throw new AppError("User not authenticated", 401);
@@ -52,7 +63,7 @@ export class PostController extends BaseController implements ICrudController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   show = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -68,7 +79,7 @@ export class PostController extends BaseController implements ICrudController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -87,7 +98,7 @@ export class PostController extends BaseController implements ICrudController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   destroy = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -106,5 +117,5 @@ export class PostController extends BaseController implements ICrudController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 }

@@ -1,78 +1,92 @@
-import { posts, users } from "@/db/schema"
+import { posts, users } from "@/db/schema";
 import { type InferInsertModel, type InferSelectModel, eq, desc, count, and } from "drizzle-orm";
-import { db } from "@/db"
+import { db } from "@/db";
 import { AppError } from "@/lib/errors";
 import { BaseService } from "./base.service";
 
 export type CreatePost = InferInsertModel<typeof posts>;
 export type Post = InferSelectModel<typeof posts>;
-export type UpdatePost = Partial<CreatePost>
+export type UpdatePost = Partial<CreatePost>;
 
 export class PostService extends BaseService {
-    async insertPost(data: CreatePost) {
-        // Check if author exists
-        const [author] = await db.select().from(users).where(eq(users.id, data.authorId));
-        if (!author) throw new AppError("Author not found", 404);
+  async insertPost(data: CreatePost) {
+    // Check if author exists
+    const [author] = await db.select().from(users).where(eq(users.id, data.authorId));
+    if (!author) throw new AppError("Author not found", 404);
 
-        // Insert post
-        const [post] = await db.insert(posts).values(data).returning();
-        return post;
+    // Insert post
+    const [post] = await db.insert(posts).values(data).returning();
+    return post;
+  }
+
+  async getPosts(
+    organizationId?: string | null,
+    page: number = 1,
+    pageSize: number = 10,
+    published?: boolean,
+  ) {
+    if (page < 1) page = 1;
+    if (pageSize < 1) pageSize = 10;
+    const offset = (page - 1) * pageSize;
+
+    const filters = [];
+    if (organizationId) {
+      filters.push(eq(posts.organizationId, organizationId));
+
+      // Filter by published status
+      if (published !== undefined) {
+        filters.push(eq(posts.published, published));
+      }
+    } else {
+      // Public users only see published posts
+      filters.push(eq(posts.published, true));
     }
 
-    async getPosts(organizationId?: string | null, page: number = 1, pageSize: number = 10) {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 10;
-        const offset = (page - 1) * pageSize;
+    const dataQuery = db
+      .select()
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .where(and(...filters))
+      .orderBy(desc(posts.createdAt))
+      .offset(offset)
+      .limit(pageSize);
 
-        const filters = [];
-        if (organizationId) {
-            filters.push(eq(posts.organizationId, organizationId));
-        } else {
-            filters.push(eq(posts.published, true));
-        }
+    const countQuery = db
+      .select({ total: count() })
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .where(and(...filters))
+      .then(([result]) => result ?? { total: 0 });
 
-        const dataQuery = db
-            .select()
-            .from(posts)
-            .innerJoin(users, eq(posts.authorId, users.id))
-            .where(and(...filters))
-            .orderBy(desc(posts.createdAt))
-            .offset(offset)
-            .limit(pageSize);
+    return this.paginate(dataQuery, countQuery, page, pageSize);
+  }
 
-        const countQuery = db
-            .select({ total: count() })
-            .from(posts)
-            .innerJoin(users, eq(posts.authorId, users.id))
-            .where(and(...filters))
-            .then(([result]) => result ?? { total: 0 });
+  async getPostById(id: number, organizationId?: string | null): Promise<Post> {
+    const filters = [];
 
-        return this.paginate(dataQuery, countQuery, page, pageSize);
+    // Show based on organizationId or published posts
+    if (organizationId) {
+      filters.push(eq(posts.organizationId, organizationId));
+    } else {
+      filters.push(eq(posts.published, true));
     }
 
-    async getPostById(id: number, organizationId?: string | null): Promise<Post> {
-        const filters = [];
+    const [post] = await db
+      .select()
+      .from(posts)
+      .where(and(eq(posts.id, id), ...filters));
+    if (!post) throw new AppError("Post not found", 404);
+    return post;
+  }
 
-        // Show based on organizationId or published posts
-        if (organizationId) {
-            filters.push(eq(posts.organizationId, organizationId));
-        } else {
-            filters.push(eq(posts.published, true));
-        }
+  async updatePost(id: number, data: UpdatePost): Promise<Post> {
+    const [post] = await db.update(posts).set(data).where(eq(posts.id, id)).returning();
+    if (!post) throw new AppError("Post not found", 404);
+    return post;
+  }
 
-        const [post] = await db.select().from(posts).where(and(eq(posts.id, id), ...filters));
-        if (!post) throw new AppError("Post not found", 404);
-        return post;
-    }
-
-    async updatePost(id: number, data: UpdatePost): Promise<Post> {
-        const [post] = await db.update(posts).set(data).where(eq(posts.id, id)).returning();
-        if (!post) throw new AppError("Post not found", 404);
-        return post;
-    }
-
-    async deletePost(id: number) {
-        const result = await db.delete(posts).where(eq(posts.id, id)).returning();
-        if (result.length === 0) throw new AppError("Post not found", 404);
-    }
+  async deletePost(id: number) {
+    const result = await db.delete(posts).where(eq(posts.id, id)).returning();
+    if (result.length === 0) throw new AppError("Post not found", 404);
+  }
 }

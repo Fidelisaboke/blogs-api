@@ -1,13 +1,7 @@
 import { relations, type InferSelectModel } from "drizzle-orm";
-import {
-  pgTable,
-  text,
-  timestamp,
-  boolean,
-  index,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { posts } from "./posts";
+import { comments } from "./comments";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -40,8 +34,9 @@ export const sessions = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    activeOrganizationId: text("active_organization_id")
-      .references(() => organizations.id, { onDelete: "set null" }),
+    activeOrganizationId: text("active_organization_id").references(() => organizations.id, {
+      onDelete: "set null",
+    }),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
 );
@@ -150,9 +145,10 @@ export const invitation = pgTable(
 export const userRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
-  posts: many(posts),
   members: many(members),
   invitations: many(invitation),
+  posts: many(posts),
+  comments: many(comments),
 }));
 
 export const sessionRelations = relations(sessions, ({ one }) => ({

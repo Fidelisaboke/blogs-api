@@ -1,10 +1,10 @@
-import express from 'express';
-import cors from 'cors';
-import { toNodeHandler } from 'better-auth/node';
-import { auth } from './lib/auth';
-import { config } from './lib/config';
-import { postRoutes } from "./routes/index";
-import { errorHandler } from './middleware/errorHandler';
+import express from "express";
+import cors from "cors";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./lib/auth";
+import { config } from "./lib/config";
+import { postRoutes, commentRoutes, categoryRoutes } from "./routes/index";
+import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
@@ -19,6 +19,8 @@ app.use(express.json());
 
 // Routes
 app.use(`${config.API_PREFIX}/posts`, postRoutes);
+app.use(`${config.API_PREFIX}`, commentRoutes);
+app.use(`${config.API_PREFIX}/categories`, categoryRoutes);
 
 // Error handler
 app.use(errorHandler);

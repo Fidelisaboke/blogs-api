@@ -1,4 +1,4 @@
-import { defineConfig, globalIgnores } from "eslint/config";
+import { defineConfig } from "eslint/config";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import prettier from "eslint-plugin-prettier";
 import tsParser from "@typescript-eslint/parser";
@@ -15,27 +15,35 @@ const compat = new FlatCompat({
     allConfig: js.configs.all
 });
 
-export default defineConfig([globalIgnores(["**/node_modules", "**/dist", "**/drizzle", "**/.env"]),
-...compat.extends(
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:prettier/recommended",
-),
-{
-    plugins: {
-        "@typescript-eslint": typescriptEslint,
-        prettier,
+export default defineConfig([
+    {
+        ignores: [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/drizzle/**",
+            "**/.env"
+        ]
     },
+    ...compat.extends(
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:prettier/recommended",
+    ),
+    {
+        plugins: {
+            "@typescript-eslint": typescriptEslint,
+            prettier,
+        },
 
-    languageOptions: {
-        parser: tsParser,
-    },
+        languageOptions: {
+            parser: tsParser,
+        },
 
-    rules: {
-        "prettier/prettier": "error",
-        "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/no-unused-vars": ["error", {
-            argsIgnorePattern: "^_",
-        }],
-    },
-}]);
+        rules: {
+            "prettier/prettier": "error",
+            "@typescript-eslint/no-explicit-any": "warn",
+            "@typescript-eslint/no-unused-vars": ["error", {
+                argsIgnorePattern: "^_",
+            }],
+        },
+    }]);

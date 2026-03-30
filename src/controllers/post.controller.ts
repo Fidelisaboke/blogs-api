@@ -17,11 +17,13 @@ export class PostController extends BaseController implements ICrudController {
       const authReq = req as AuthRequest;
       const page = Number(req.query.page) || 1;
       const pageSize = Math.min(Number(req.query.limit) || 10, 100);
+      const q = req.query.q as string | undefined;
 
       const result = await this.service.getPosts(
         authReq.session?.activeOrganizationId,
         page,
         pageSize,
+        q,
       );
       return this.success(res, result, "Retrieved posts successfully", 200);
     } catch (error) {

@@ -1,5 +1,13 @@
 import { posts, users, tags, tagsToPosts } from "@/db/schema";
-import { type InferInsertModel, type InferSelectModel, eq, count } from "drizzle-orm";
+import {
+  type InferInsertModel,
+  type InferSelectModel,
+  eq,
+  count,
+  ilike,
+  or,
+  and,
+} from "drizzle-orm";
 import { db } from "@/db";
 import { AppError } from "@/lib/errors";
 import { BaseService } from "./base.service";
@@ -82,14 +90,29 @@ export class PostService extends BaseService {
     });
   }
 
-  async getPosts(organizationId?: string | null, page: number = 1, pageSize: number = 10) {
+  async getPosts(
+    organizationId?: string | null,
+    page: number = 1,
+    pageSize: number = 10,
+    q?: string,
+  ) {
     const { limit, offset, page: safePage } = this.getPaginationParams(page, pageSize);
 
     const dataQuery = db.query.posts.findMany({
-      where: (posts, { eq }) => {
-        return organizationId
-          ? eq(posts.organizationId, organizationId)
-          : eq(posts.published, true);
+      where: (posts, { eq, and, or, ilike }) => {
+        const conditions = [];
+
+        if (organizationId) {
+          conditions.push(eq(posts.organizationId, organizationId));
+        } else {
+          conditions.push(eq(posts.published, true));
+        }
+
+        if (q) {
+          conditions.push(or(ilike(posts.title, `%${q}%`), ilike(posts.content, `%${q}%`)));
+        }
+
+        return and(...conditions);
       },
       orderBy: (posts, { desc }) => [desc(posts.createdAt)],
       limit: limit,
@@ -108,7 +131,18 @@ export class PostService extends BaseService {
     const countQuery = db
       .select({ total: count() })
       .from(posts)
-      .where(organizationId ? eq(posts.organizationId, organizationId) : eq(posts.published, true))
+      .where(() => {
+        const conditions = [];
+        if (organizationId) {
+          conditions.push(eq(posts.organizationId, organizationId));
+        } else {
+          conditions.push(eq(posts.published, true));
+        }
+        if (q) {
+          conditions.push(or(ilike(posts.title, `%${q}%`), ilike(posts.content, `%${q}%`)));
+        }
+        return and(...conditions);
+      })
       .then(([result]) => result ?? { total: 0 });
 
     // Get the pagination result

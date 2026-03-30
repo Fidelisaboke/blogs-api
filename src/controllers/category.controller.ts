@@ -14,7 +14,8 @@ export class CategoryController extends BaseController implements ICrudControlle
     try {
       const page = Math.max(1, Number(req.query.page) || 1);
       const pageSize = Math.min(Math.max(1, Number(req.query.limit) || 10), 100);
-      const result = await this.service.getCategories(page, pageSize);
+      const q = req.query.q as string | undefined;
+      const result = await this.service.getCategories(page, pageSize, q);
       return this.success(res, result, "Retrieved categories successfully", 200);
     } catch (error) {
       next(error);

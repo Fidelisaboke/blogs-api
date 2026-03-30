@@ -1,7 +1,7 @@
 import { eq, type InferInsertModel, type InferSelectModel, count, isNull, and } from "drizzle-orm";
 import { BaseService } from "./base.service";
 import { db } from "@/db";
-import { users, comments, posts, type User } from "@/db/schema";
+import { users, comments, type User } from "@/db/schema";
 import { AppError } from "@/lib/errors";
 
 export type CreateComment = InferInsertModel<typeof comments>;
@@ -10,14 +10,30 @@ export type Comment = BaseComment & { replies: Comment[] };
 export type UpdateComment = Partial<CreateComment>;
 
 export class CommentService extends BaseService {
-  async insertComment(postId: number, data: CreateComment) {
+  async insertComment(postId: number, data: CreateComment, activeOrganizationId?: string | null) {
     // Check if author exists
     const author = await db.query.users.findFirst({ where: eq(users.id, data.authorId) });
     if (!author) throw new AppError("User not found", 404);
 
-    // Check if post exists
-    const post = await db.query.posts.findFirst({ where: eq(posts.id, postId) });
-    if (!post) throw new AppError("Post not found", 404);
+    // Check if post exists and is accessible
+    const post = await db.query.posts.findFirst({
+      where: (p, { eq, and, or }) => {
+        const conditions = [eq(p.id, postId)];
+
+        // Post must be published OR belong to the user's active organization
+        const visibilityConditions = [eq(p.published, true)];
+        if (activeOrganizationId) {
+          visibilityConditions.push(eq(p.organizationId, activeOrganizationId));
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const orCondition = or(...(visibilityConditions as [any, ...any[]]));
+        if (orCondition) conditions.push(orCondition);
+        return and(...conditions);
+      },
+    });
+
+    if (!post) throw new AppError("Post not found or access denied", 404);
 
     // Check if parent comment exists if parent ID is provided
     if (data.parentId) {
@@ -35,12 +51,33 @@ export class CommentService extends BaseService {
     return comment;
   }
 
-  async getComments(postId: number, page: number = 1, pageSize: number = 10) {
+  async getComments(
+    postId: number,
+    page: number = 1,
+    pageSize: number = 10,
+    activeOrganizationId?: string | null,
+  ) {
     const { limit, offset, page: safePage } = this.getPaginationParams(page, pageSize);
 
-    // Check if post exists
-    const post = await db.query.posts.findFirst({ where: eq(posts.id, postId) });
-    if (!post) throw new AppError("Post not found", 404);
+    // Check if post exists and is accessible
+    const post = await db.query.posts.findFirst({
+      where: (p, { eq, and, or }) => {
+        const conditions = [eq(p.id, postId)];
+
+        // Post must be published OR belong to the user's active organization
+        const visibilityConditions = [eq(p.published, true)];
+        if (activeOrganizationId) {
+          visibilityConditions.push(eq(p.organizationId, activeOrganizationId));
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const orCondition = or(...(visibilityConditions as [any, ...any[]]));
+        if (orCondition) conditions.push(orCondition);
+        return and(...conditions);
+      },
+    });
+
+    if (!post) throw new AppError("Post not found or access denied", 404);
 
     // Two-step fetch to get root comments and their replies
     const dataQuery = (async () => {
@@ -101,14 +138,26 @@ export class CommentService extends BaseService {
     };
   }
 
-  async getCommentById(id: number) {
-    const comment = await db.query.comments.findFirst({
+  async getCommentById(id: number, activeOrganizationId?: string | null) {
+    const commentWithRelations = await db.query.comments.findFirst({
       where: (comment, { eq }) => eq(comment.id, id),
-      with: { author: true },
+      with: {
+        author: true,
+        post: true,
+      },
     });
 
-    if (!comment) throw new AppError("Comment not found", 404);
-    return comment;
+    if (!commentWithRelations) throw new AppError("Comment not found", 404);
+
+    // Check post visibility
+    const isVisible =
+      commentWithRelations.post.published ||
+      (activeOrganizationId && commentWithRelations.post.organizationId === activeOrganizationId);
+
+    if (!isVisible) throw new AppError("Post not found or access denied", 404);
+
+    const { post: _post, ...comment } = commentWithRelations;
+    return { ...comment, replies: [] };
   }
 
   async updateComment(id: number, data: UpdateComment) {

@@ -41,9 +41,6 @@ app.use((req, res, next) => {
 // Better Auth
 app.all(`${config.API_PREFIX}/auth/*splat`, toNodeHandler(auth));
 
-// Express JSON parsing
-app.use(express.json());
-
 // Routes
 app.use(`${config.API_PREFIX}/posts`, postRoutes);
 app.use(`${config.API_PREFIX}`, commentRoutes);

@@ -14,13 +14,19 @@ export class CommentController extends BaseController implements ICrudController
 
   index = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const authReq = req as AuthRequest;
       // Get pagination query params
       const page = Math.max(Number(req.query.page) || 1, 1);
       const pageSize = Math.min(Number(req.query.limit) || 10, 100);
 
       // Fetch comments
       const postId = this.parseIdParam(req.params.postId);
-      const result = await this.service.getComments(postId, page, pageSize);
+      const result = await this.service.getComments(
+        postId,
+        page,
+        pageSize,
+        authReq.session?.activeOrganizationId,
+      );
       return this.success(res, result, "Comments retrieved successfully", 200);
     } catch (error) {
       next(error);
@@ -39,7 +45,12 @@ export class CommentController extends BaseController implements ICrudController
         authorId: authReq.user.id,
       };
       const postId = this.parseIdParam(req.params.postId);
-      const comment = await this.service.insertComment(postId, commentData);
+
+      const comment = await this.service.insertComment(
+        postId,
+        commentData,
+        authReq.session?.activeOrganizationId,
+      );
       return this.success(res, comment, "Comment created successfully", 201);
     } catch (error) {
       next(error);
@@ -48,8 +59,12 @@ export class CommentController extends BaseController implements ICrudController
 
   show = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const authReq = req as AuthRequest;
       const commentId = this.parseIdParam(req.params.id);
-      const comment = await this.service.getCommentById(commentId);
+      const comment = await this.service.getCommentById(
+        commentId,
+        authReq.session?.activeOrganizationId,
+      );
       return this.success(res, comment, "Comment retrieved successfully", 200);
     } catch (error) {
       next(error);

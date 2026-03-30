@@ -17,4 +17,5 @@ export const config = {
     WRITE_WINDOW_MS: getNumber("RATE_LIMIT_WRITE_WINDOW_MS", 15 * 60 * 1000),
     WRITE_MAX: getNumber("RATE_LIMIT_WRITE_MAX", 100),
   },
+  ROOT_ORGANIZATION_ID: process.env.ROOT_ORGANIZATION_ID ?? "",
 };

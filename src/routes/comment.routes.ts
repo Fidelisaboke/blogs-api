@@ -1,5 +1,5 @@
 import { CommentController } from "@/controllers/comment.controller";
-import { requireAuth, canManageComment } from "@/middleware/auth";
+import { requireAuth, canManageComment, optionalAuth } from "@/middleware/auth";
 import { validateRequest } from "@/middleware/validator";
 import { Router } from "express";
 import { createCommentSchema, updateCommentSchema } from "@/schemas/comment.schema";
@@ -9,8 +9,8 @@ export const router: Router = Router();
 const commentController = new CommentController();
 
 // Public
-router.get("/posts/:postId/comments", commentController.index);
-router.get("/posts/:postId/comments/:id", commentController.show);
+router.get("/posts/:postId/comments", optionalAuth, commentController.index);
+router.get("/posts/:postId/comments/:id", optionalAuth, commentController.show);
 
 // Protected
 router.post(

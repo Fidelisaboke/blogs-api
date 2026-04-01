@@ -26,4 +26,5 @@ router.patch(
   validateRequest(updateCommentSchema),
   commentController.update,
 );
+router.patch("/comments/:id/like", requireAuth, commentController.likeComment);
 router.delete("/comments/:id", requireAuth, canManageComment, commentController.destroy);

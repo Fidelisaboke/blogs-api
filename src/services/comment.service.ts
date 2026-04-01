@@ -1,11 +1,14 @@
 import { eq, type InferInsertModel, type InferSelectModel, count, isNull, and } from "drizzle-orm";
 import { BaseService } from "./base.service";
 import { db } from "@/db";
-import { users, comments, type User } from "@/db/schema";
+import { users, comments, commentLikes, type User, type CommentLike } from "@/db/schema";
 import { AppError } from "@/lib/errors";
 
 export type CreateComment = InferInsertModel<typeof comments>;
-type BaseComment = InferSelectModel<typeof comments> & { author: User };
+type BaseComment = InferSelectModel<typeof comments> & {
+  author: User;
+  commentLikes?: CommentLike[];
+};
 export type Comment = BaseComment & { replies: Comment[] };
 export type UpdateComment = Partial<CreateComment>;
 
@@ -26,14 +29,13 @@ export class CommentService extends BaseService {
           visibilityConditions.push(eq(p.organizationId, activeOrganizationId));
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const orCondition = or(...(visibilityConditions as [any, ...any[]]));
         if (orCondition) conditions.push(orCondition);
         return and(...conditions);
       },
     });
 
-    if (!post) throw new AppError("Post not found or access denied", 404);
+    if (!post) throw new AppError("Post not found", 404);
 
     // Check if parent comment exists if parent ID is provided
     if (data.parentId) {
@@ -70,14 +72,13 @@ export class CommentService extends BaseService {
           visibilityConditions.push(eq(p.organizationId, activeOrganizationId));
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const orCondition = or(...(visibilityConditions as [any, ...any[]]));
         if (orCondition) conditions.push(orCondition);
         return and(...conditions);
       },
     });
 
-    if (!post) throw new AppError("Post not found or access denied", 404);
+    if (!post) throw new AppError("Post not found", 404);
 
     // Two-step fetch to get root comments and their replies
     const dataQuery = (async () => {
@@ -86,7 +87,14 @@ export class CommentService extends BaseService {
         where: (c, { eq, and, isNull }) => {
           return and(eq(c.postId, postId), isNull(c.parentId));
         },
-        with: { author: true },
+        with: {
+          author: true,
+          commentLikes: {
+            with: {
+              user: true,
+            },
+          },
+        },
         limit: limit,
         offset: offset,
       });
@@ -101,7 +109,14 @@ export class CommentService extends BaseService {
         where: (c, { eq, and, inArray }) => {
           return and(eq(c.postId, postId), inArray(c.parentId, rootIds));
         },
-        with: { author: true },
+        with: {
+          author: true,
+          commentLikes: {
+            with: {
+              user: true,
+            },
+          },
+        },
       });
 
       return [...roots, ...replies];
@@ -131,7 +146,7 @@ export class CommentService extends BaseService {
       }
     }
 
-    // Return top-level comments
+    // Return top-level comments with replies
     return {
       ...result,
       comments: Array.from(commentsMap.values()).filter((c) => c.parentId === null),
@@ -144,6 +159,11 @@ export class CommentService extends BaseService {
       with: {
         author: true,
         post: true,
+        commentLikes: {
+          with: {
+            user: true,
+          },
+        },
       },
     });
 
@@ -154,10 +174,47 @@ export class CommentService extends BaseService {
       commentWithRelations.post.published ||
       (activeOrganizationId && commentWithRelations.post.organizationId === activeOrganizationId);
 
-    if (!isVisible) throw new AppError("Post not found or access denied", 404);
+    if (!isVisible) throw new AppError("Post not found", 404);
 
     const { post: _post, ...comment } = commentWithRelations;
     return { ...comment, replies: [] };
+  }
+
+  async likeComment(id: number, userId: string) {
+    return await db.transaction(async (tx) => {
+      // Check if comment exists
+      const comment = await tx.query.comments.findFirst({
+        where: eq(comments.id, id),
+        with: {
+          commentLikes: true,
+        },
+      });
+
+      if (!comment) throw new AppError("Comment not found", 404);
+
+      // Toggle comment like
+      const isLiked = comment.commentLikes.some((like) => like.userId === userId);
+      if (isLiked) {
+        await tx.delete(commentLikes).where(eq(commentLikes.commentId, id));
+      } else {
+        await tx.insert(commentLikes).values({ commentId: id, userId });
+      }
+
+      // Get the updated comment
+      const updatedComment = await tx.query.comments.findFirst({
+        where: eq(comments.id, id),
+        with: {
+          commentLikes: {
+            with: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      if (!updatedComment) throw new AppError("Comment not found", 404);
+      return updatedComment;
+    });
   }
 
   async updateComment(id: number, data: UpdateComment) {

@@ -9,6 +9,7 @@ export const router: Router = Router();
 const commentController = new CommentController();
 
 // Public
+router.get("/comments", optionalAuth, commentController.index);
 router.get("/posts/:postId/comments", optionalAuth, commentController.index);
 router.get("/posts/:postId/comments/:id", optionalAuth, commentController.show);
 

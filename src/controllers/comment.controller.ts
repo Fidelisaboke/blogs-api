@@ -19,10 +19,24 @@ export class CommentController extends BaseController implements ICrudController
       const page = Math.max(Number(req.query.page) || 1, 1);
       const pageSize = Math.min(Number(req.query.limit) || 10, 100);
 
+      // Extract filters
+      const filters: { postId?: number; authorId?: string } = {};
+
+      // Check if postId is in params or query
+      if (req.params.postId) {
+        filters.postId = this.parseIdParam(req.params.postId);
+      } else if (req.query.postId) {
+        filters.postId = Number(req.query.postId);
+      }
+
+      // Check if authorId is in query
+      if (req.query.authorId) {
+        filters.authorId = String(req.query.authorId);
+      }
+
       // Fetch comments
-      const postId = this.parseIdParam(req.params.postId);
       const result = await this.service.getComments(
-        postId,
+        filters,
         page,
         pageSize,
         authReq.session?.activeOrganizationId,

@@ -52,6 +52,7 @@ export class PostController extends BaseController implements ICrudController {
         content: req.body.content,
         categoryId: req.body.categoryId,
         published: req.body.published,
+        image: req.body.image,
         authorId: authReq.user.id,
         organizationId: organizationId,
       };
@@ -81,10 +82,10 @@ export class PostController extends BaseController implements ICrudController {
       if (!authReq.post) throw new AppError("Post not found", 404);
 
       // Update post with tags
-      const { title, content, published, categoryId } = req.body;
+      const { title, content, published, categoryId, image } = req.body;
       const post = await this.service.updatePostWithTags(
         authReq.post.id,
-        { title, content, published, categoryId },
+        { title, content, published, categoryId, image },
         req.body.tags,
       );
 

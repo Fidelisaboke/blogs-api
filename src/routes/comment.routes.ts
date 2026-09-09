@@ -9,6 +9,7 @@ export const router: Router = Router();
 const commentController = new CommentController();
 
 // Public
+router.get("/comments", optionalAuth, commentController.index);
 router.get("/posts/:postId/comments", optionalAuth, commentController.index);
 router.get("/posts/:postId/comments/:id", optionalAuth, commentController.show);
 
@@ -26,4 +27,5 @@ router.patch(
   validateRequest(updateCommentSchema),
   commentController.update,
 );
+router.patch("/comments/:id/like", requireAuth, commentController.likeComment);
 router.delete("/comments/:id", requireAuth, canManageComment, commentController.destroy);

@@ -5,7 +5,7 @@ import { globalRateLimiter, authRateLimiter, writeRateLimiter } from "./middlewa
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth";
 import { config } from "./lib/config";
-import { postRoutes, commentRoutes, categoryRoutes } from "./routes/index";
+import { postRoutes, commentRoutes, categoryRoutes, uploadRoutes } from "./routes/index";
 import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
@@ -41,10 +41,14 @@ app.use((req, res, next) => {
 // Better Auth
 app.all(`${config.API_PREFIX}/auth/*splat`, toNodeHandler(auth));
 
+// Static Files
+app.use("/public", express.static("public"));
+
 // Routes
 app.use(`${config.API_PREFIX}/posts`, postRoutes);
 app.use(`${config.API_PREFIX}`, commentRoutes);
 app.use(`${config.API_PREFIX}/categories`, categoryRoutes);
+app.use(`${config.API_PREFIX}/upload`, uploadRoutes);
 
 // Error handler
 app.use(errorHandler);

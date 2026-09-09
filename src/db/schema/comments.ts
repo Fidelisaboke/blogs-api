@@ -2,6 +2,7 @@ import { integer, pgTable, serial, text, index, timestamp } from "drizzle-orm/pg
 import { posts } from "./posts";
 import { users } from "./auth";
 import { relations, type InferSelectModel } from "drizzle-orm";
+import { commentLikes } from "./commentLikes";
 
 export const comments = pgTable(
   "comments",
@@ -15,7 +16,6 @@ export const comments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
-    likes: integer("likes").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -46,4 +46,5 @@ export const commentRelations = relations(comments, ({ one, many }) => ({
     relationName: "commentReplies",
   }),
   replies: many(comments, { relationName: "commentReplies" }),
+  commentLikes: many(commentLikes),
 }));

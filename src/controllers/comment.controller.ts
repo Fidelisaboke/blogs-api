@@ -19,10 +19,24 @@ export class CommentController extends BaseController implements ICrudController
       const page = Math.max(Number(req.query.page) || 1, 1);
       const pageSize = Math.min(Number(req.query.limit) || 10, 100);
 
+      // Extract filters
+      const filters: { postId?: number; authorId?: string } = {};
+
+      // Check if postId is in params or query
+      if (req.params.postId) {
+        filters.postId = this.parseIdParam(req.params.postId);
+      } else if (req.query.postId) {
+        filters.postId = Number(req.query.postId);
+      }
+
+      // Check if authorId is in query
+      if (req.query.authorId) {
+        filters.authorId = String(req.query.authorId);
+      }
+
       // Fetch comments
-      const postId = this.parseIdParam(req.params.postId);
       const result = await this.service.getComments(
-        postId,
+        filters,
         page,
         pageSize,
         authReq.session?.activeOrganizationId,
@@ -100,6 +114,18 @@ export class CommentController extends BaseController implements ICrudController
       // Delete comment
       await this.service.deleteComment(authReq.comment.id);
       return res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  likeComment = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const authReq = req as AuthRequest;
+      if (!authReq.user) throw new AppError("User not authenticated", 401);
+      const commentId = this.parseIdParam(req.params.id);
+      const likedComment = await this.service.likeComment(commentId, authReq.user.id);
+      return this.success(res, likedComment, "Comment liked successfully", 200);
     } catch (error) {
       next(error);
     }

@@ -5,6 +5,7 @@ export const createPostSchema = z.object({
   content: z.string().min(1, "Content is required"),
   published: z.boolean().optional().default(true),
   categoryId: z.number().min(1, "Category ID is required"),
+  image: z.string().optional(),
   tags: z.array(z.string().min(1, "Tag cannot be empty")).optional(),
 });
 

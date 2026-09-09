@@ -18,4 +18,6 @@ export const config = {
     WRITE_MAX: getNumber("RATE_LIMIT_WRITE_MAX", 100),
   },
   ROOT_ORGANIZATION_ID: process.env.ROOT_ORGANIZATION_ID ?? "",
+  MAX_FILE_SIZE: getNumber("MAX_FILE_SIZE", 5 * 1024 * 1024), // 5MB default
+  MAX_FILE_SIZE_MB: getNumber("MAX_FILE_SIZE_MB", 5), // 5MB default for display
 };

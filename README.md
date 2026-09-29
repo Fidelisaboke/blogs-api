@@ -130,3 +130,5 @@ The project follows a modular structure to ensure high maintainability and ease 
 ├── tsconfig.json         # TypeScript compiler configuration
 └── package.json          # Project metadata and dependencies
 ```
+
+roadmap.sh Project URL: https://roadmap.sh/projects/blogging-platform-api
